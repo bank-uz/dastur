@@ -609,10 +609,8 @@
 
   <!-- Config banner (shown if URL not set) -->
   <div class="config-banner" id="configBanner">
-    ⚠️ &nbsp;<strong>Diqqat:</strong> &nbsp;
-    Demo ma'lumot ko'rsatilmoqda. Haqiqiy ma'lumot uchun: &nbsp;
-    <strong>1)</strong> <code>SHEETS_ID</code> ga Google Sheets ID kiriting &nbsp;
-    <strong>2)</strong> Google Sheets → <em>File → Share → Publish to web → CSV</em> qiling.
+    ⚙️ &nbsp;<strong>Sozlash:</strong> &nbsp;
+    Google Sheets CSV havolasini <code>SHEETS_CSV_URL</code> o'zgaruvchisiga joylashtiring (skriptning boshida).
   </div>
 
   <!-- ── KPI SECTION ── -->
@@ -753,12 +751,7 @@
   // ║  Misol: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms'  ║
   // ╚══════════════════════════════════════════════════════════╝
   const SHEETS_ID = '1UT8kIRpmQYdhbYC5mREZGqroPWlw4ICrWa_UCOjsvoA';
-
-  // Ikkala URL formatini sinab ko'ramiz (biri ishlamasa ikkinchisi)
-  const SHEETS_URLS = [
-    `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/pub?output=csv`,
-    `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/export?format=csv&gid=0`,
-  ];
+  const SHEETS_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/pub?output=csv`;
   /* ══════════════════════════════════════════════════════ */
 
   const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 daqiqa
@@ -786,69 +779,33 @@
   const fmtB = v => isNaN(v) ? '—' : (+v / 1000).toFixed(1);  // mlrd
 
   /* ── Main load function ── */
-  function hideLoading() {
-    document.getElementById('loadingOverlay').classList.add('hidden');
-  }
-
-  async function tryFetchCSV(urls) {
-    for (const url of urls) {
-      try {
-        const res = await fetch(url + '&cb=' + Date.now(), { mode: 'cors' });
-        if (!res.ok) continue;
-        const text = await res.text();
-        if (!text || text.trim().length < 10) continue;
-        return text;
-      } catch(e) { continue; }
-    }
-    return null;
-  }
-
   async function loadData() {
-    // Agar ID kiritilmagan bo'lsa — demo ma'lumot ko'rsat
     if (SHEETS_ID === 'BU_YERGA_SHEETS_ID_KIRITING') {
       document.getElementById('configBanner').classList.remove('hidden');
-      hideLoading();
+      document.getElementById('loadingOverlay').classList.add('hidden');
       renderDemoData();
       return;
     }
 
     document.getElementById('configBanner').classList.add('hidden');
 
-    // 12 soniyadan keyin avtomatik fallback
-    const fallbackTimer = setTimeout(() => {
-      hideLoading();
-      document.getElementById('configBanner').classList.remove('hidden');
-      renderDemoData();
-    }, 12000);
-
-    try {
-      const csvText = await tryFetchCSV(SHEETS_URLS);
-      clearTimeout(fallbackTimer);
-
-      if (!csvText) {
-        hideLoading();
-        document.getElementById('configBanner').classList.remove('hidden');
-        renderDemoData();
-        return;
-      }
-
-      const result = Papa.parse(csvText, { header: true, skipEmptyLines: true });
-      hideLoading();
-
-      if (result.data && result.data.length > 0) {
-        render(result.data);
+    const cacheBust = '?cb=' + Date.now();
+    Papa.parse(SHEETS_CSV_URL + cacheBust, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: ({ data }) => {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        render(data);
         document.getElementById('updateTime').textContent =
           new Date().toLocaleTimeString('uz-UZ', {hour:'2-digit', minute:'2-digit'});
-      } else {
+      },
+      error: () => {
+        document.getElementById('loadingOverlay').classList.add('hidden');
         document.getElementById('configBanner').classList.remove('hidden');
         renderDemoData();
       }
-    } catch(err) {
-      clearTimeout(fallbackTimer);
-      hideLoading();
-      document.getElementById('configBanner').classList.remove('hidden');
-      renderDemoData();
-    }
+    });
   }
 
   /* ── Render all components ── */

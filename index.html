@@ -1,168 +1,621 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bank Monitoring Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --primary-color: #2c3e50;
-            --accent-color: #3498db;
-            --bg-color: #f4f7f6;
-        }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg-color); margin: 0; }
-        
-        /* Parol oynasi stili */
-        #login-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--primary-color); display: flex; justify-content: center;
-            align-items: center; z-index: 1000; color: white; flex-direction: column;
-        }
-        .login-box { background: white; padding: 30px; border-radius: 10px; color: #333; text-align: center; }
-        input[type="password"] { padding: 10px; width: 200px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px; }
-        button { padding: 10px 20px; background: var(--accent-color); color: white; border: none; border-radius: 5px; cursor: pointer; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Markaziy Bank — Kredit Monitoringi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --navy:     #05111f;
+  --navy2:    #0b1f38;
+  --navy3:    #122847;
+  --gold:     #c9a84c;
+  --gold2:    #e2c97e;
+  --gold-dim: rgba(201,168,76,0.18);
+  --teal:     #1f9e8a;
+  --teal2:    #26c9b0;
+  --red:      #cf4e4e;
+  --red-dim:  rgba(207,78,78,0.16);
+  --white:    #eef2f7;
+  --muted:    rgba(238,242,247,0.42);
+  --border:   rgba(201,168,76,0.18);
+  --card:     rgba(11,31,56,0.9);
+  --fh: 'Playfair Display', serif;
+  --fb: 'Barlow', sans-serif;
+  --fc: 'Barlow Condensed', sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}
+body{
+  background:var(--navy);
+  color:var(--white);
+  font-family:var(--fb);
+  min-height:100vh;
+  background-image:
+    radial-gradient(ellipse 100% 60% at 50% -5%, rgba(18,40,71,0.9) 0%, transparent 65%),
+    repeating-linear-gradient(0deg,transparent,transparent 49px,rgba(201,168,76,0.03) 50px),
+    repeating-linear-gradient(90deg,transparent,transparent 49px,rgba(201,168,76,0.03) 50px);
+}
 
-        /* Dashboard stili */
-        #dashboard { display: none; padding: 20px; }
-        .header { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        h1, h2 { color: var(--primary-color); margin-top: 0; }
-    </style>
+/* ── PASSWORD SCREEN ─────────────────────────── */
+#ps{
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(160deg,#04111f 0%,#0b1f38 50%,#071829 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.6rem;
+}
+#ps.gone{display:none}
+.ps-emblem{margin-bottom:.4rem}
+.ps-title{text-align:center}
+.ps-title h2{font-family:var(--fh);font-size:1.05rem;color:var(--gold);font-weight:700;letter-spacing:.02em}
+.ps-title p{font-size:.68rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:4px}
+.ps-box{width:290px;display:flex;flex-direction:column;gap:.55rem}
+.ps-box label{font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+#pin{
+  background:rgba(11,31,56,.95);border:1px solid rgba(201,168,76,.3);border-radius:8px;
+  padding:.8rem 1rem;color:var(--white);font-size:1rem;font-family:var(--fc);
+  letter-spacing:.15em;outline:none;width:100%;transition:border-color .2s;
+}
+#pin:focus{border-color:rgba(201,168,76,.7)}
+#pin.err{border-color:var(--red)!important}
+.ps-btn{
+  background:linear-gradient(135deg,#c9a84c,#a87830);border:none;border-radius:8px;
+  padding:.8rem;color:#060f1a;font-weight:700;font-size:.82rem;
+  font-family:var(--fc);letter-spacing:.1em;text-transform:uppercase;cursor:pointer;
+}
+.ps-btn:hover{filter:brightness(1.1)}
+#ps-err{color:var(--red);font-size:.7rem;text-align:center;display:none;font-family:var(--fc);letter-spacing:.04em}
+.ps-foot{font-size:.6rem;color:rgba(238,242,247,.18);letter-spacing:.08em;text-transform:uppercase}
+
+/* ── HEADER ──────────────────────────────────── */
+header{
+  background:linear-gradient(135deg,#061422 0%,#0c2040 60%,#091b34 100%);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 4px 40px rgba(0,0,0,.55);
+}
+.hdr{max-width:1560px;margin:0 auto;padding:0 2.4rem;height:74px;display:flex;align-items:center;justify-content:space-between;gap:1.5rem}
+.hdr-l{display:flex;align-items:center;gap:1.1rem}
+.hdr-titles h1{font-family:var(--fh);font-size:1rem;color:var(--gold);font-weight:700;letter-spacing:.02em;line-height:1.2}
+.hdr-titles p{font-size:.68rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+.hdr-r{display:flex;align-items:center;gap:1.6rem}
+.live-pill{
+  display:flex;align-items:center;gap:.45rem;
+  background:rgba(31,158,138,.13);border:1px solid rgba(31,158,138,.32);
+  border-radius:20px;padding:5px 14px;
+  font-size:.68rem;font-family:var(--fc);letter-spacing:.06em;text-transform:uppercase;color:var(--teal2);
+}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--teal2);animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.upd{font-size:.68rem;color:var(--muted);font-family:var(--fc);text-align:right;line-height:1.6}
+.upd strong{color:var(--gold2);display:block}
+
+/* ── LAYOUT ──────────────────────────────────── */
+main{max-width:1560px;margin:0 auto;padding:1.8rem 2.4rem 3rem}
+
+/* ── NOTICE BANNER ───────────────────────────── */
+#notice{
+  background:linear-gradient(90deg,rgba(201,168,76,.12),rgba(201,168,76,.04));
+  border:1px solid rgba(201,168,76,.28);border-radius:8px;
+  padding:.85rem 1.3rem;margin-bottom:1.4rem;
+  font-size:.76rem;line-height:1.6;display:none;
+}
+#notice strong{color:var(--gold2)}
+#notice code{background:rgba(0,0,0,.3);padding:1px 7px;border-radius:4px;color:var(--gold2);font-size:.7rem}
+
+/* ── SECTION LABEL ───────────────────────────── */
+.sec{
+  font-family:var(--fc);font-size:.68rem;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--gold);
+  margin-bottom:.9rem;padding-left:.7rem;border-left:3px solid var(--gold);opacity:.82;
+}
+
+/* ── KPI GRID ────────────────────────────────── */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:.9rem;margin-bottom:1.8rem}
+.kpi{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:1.2rem 1.3rem 1rem;position:relative;overflow:hidden;
+  backdrop-filter:blur(10px);transition:transform .2s,box-shadow .2s;
+}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);opacity:.55}
+.kpi.t::before{background:var(--teal2)}
+.kpi.r::before{background:var(--red)}
+.kpi:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.38)}
+.kpi-ico{font-size:1.3rem;margin-bottom:.45rem;display:block;opacity:.82}
+.kpi-lbl{font-size:.66rem;font-family:var(--fc);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:.35rem}
+.kpi-val{font-family:var(--fc);font-size:1.7rem;font-weight:700;color:var(--white);line-height:1;letter-spacing:-.01em}
+.kpi-u{font-size:.66rem;color:var(--gold);font-weight:500;margin-left:2px}
+.kpi-sub{margin-top:.5rem;font-size:.65rem;color:var(--muted);font-family:var(--fc);letter-spacing:.03em}
+.up{color:var(--teal2)}.dn{color:var(--red)}
+
+/* ── CHARTS ──────────────────────────────────── */
+.charts-row{display:grid;grid-template-columns:2.2fr 1fr 1fr;gap:.9rem;margin-bottom:1.8rem}
+.card{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:1.2rem 1.3rem;backdrop-filter:blur(10px);
+}
+.card-ttl{font-family:var(--fc);font-size:.74rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--gold2);margin-bottom:.9rem;opacity:.9}
+canvas{max-height:210px}
+
+/* ── SECTOR LEGEND ───────────────────────────── */
+.leg{display:flex;flex-direction:column;gap:.5rem;margin-top:.9rem}
+.leg-row{display:flex;align-items:center;gap:.5rem}
+.leg-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.leg-name{font-size:.7rem;color:var(--muted);flex:1}
+.leg-val{font-size:.76rem;font-weight:600;font-family:var(--fc);color:var(--white)}
+
+/* ── NPL PANEL ───────────────────────────────── */
+.npl-big{text-align:center;padding:.4rem 0 .2rem}
+.npl-num{font-size:3rem;font-weight:700;font-family:var(--fc);color:var(--red);line-height:1}
+.npl-num sup{font-size:1.1rem;vertical-align:top;margin-top:.4rem;display:inline-block}
+.npl-cap{font-size:.68rem;color:var(--muted);margin-top:.25rem;letter-spacing:.06em}
+.npl-track{height:8px;background:rgba(255,255,255,.07);border-radius:4px;margin:.7rem 0;overflow:hidden}
+.npl-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--teal),var(--gold) 55%,var(--red));transition:width 1.2s ease}
+.npl-thr{display:flex;justify-content:space-between;font-size:.6rem;color:var(--muted);font-family:var(--fc)}
+.mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-top:1rem}
+.mini-box{background:rgba(255,255,255,.04);border-radius:6px;padding:.55rem .75rem}
+.mini-lbl{font-size:.6rem;color:var(--muted);font-family:var(--fc);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.mini-val{font-size:1.05rem;font-weight:700;font-family:var(--fc)}
+
+/* ── TABLE ───────────────────────────────────── */
+.tbl-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;backdrop-filter:blur(10px)}
+.tbl-hdr{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.4rem;border-bottom:1px solid var(--border)}
+.tbl-hdr-ttl{font-family:var(--fc);font-size:.74rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--gold2);opacity:.9}
+.tbl-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.78rem}
+thead tr{background:rgba(201,168,76,.07);border-bottom:1px solid var(--border)}
+thead th{padding:.7rem .95rem;text-align:right;font-size:.63rem;font-family:var(--fc);font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--gold);white-space:nowrap}
+thead th:first-child{text-align:left}
+tbody tr{border-bottom:1px solid rgba(201,168,76,.06);transition:background .15s}
+tbody tr:hover{background:rgba(201,168,76,.05)}
+tbody tr:last-child{border-bottom:none}
+tbody td{padding:.65rem .95rem;text-align:right;font-family:var(--fc);font-size:.8rem;color:rgba(238,242,247,.82);white-space:nowrap}
+tbody td:first-child{text-align:left;font-weight:600;color:var(--white);font-family:var(--fb);font-size:.76rem}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.65rem;font-weight:700;font-family:var(--fc);letter-spacing:.03em}
+.badge.g{background:rgba(31,158,138,.2);color:var(--teal2)}
+.badge.y{background:rgba(201,168,76,.15);color:var(--gold2)}
+.badge.r{background:var(--red-dim);color:var(--red)}
+.rk{color:var(--muted);font-size:.65rem;margin-right:.35rem}
+
+/* ── FOOTER ──────────────────────────────────── */
+footer{
+  max-width:1560px;margin:0 auto;padding:1.1rem 2.4rem;
+  border-top:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:.65rem;color:var(--muted);font-family:var(--fc);letter-spacing:.04em;
+}
+footer span{color:var(--gold);opacity:.7}
+
+/* ── LOADER ──────────────────────────────────── */
+#loader{
+  position:fixed;inset:0;background:var(--navy);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.1rem;z-index:500;
+}
+#loader.gone{display:none}
+.spin{width:42px;height:42px;border:3px solid rgba(201,168,76,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loader p{font-family:var(--fc);font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+/* ── RESPONSIVE ──────────────────────────────── */
+@media(max-width:1200px){.kpi-row{grid-template-columns:repeat(3,1fr)}.charts-row{grid-template-columns:1fr 1fr}}
+@media(max-width:760px){main{padding:1rem}.kpi-row{grid-template-columns:repeat(2,1fr)}.charts-row{grid-template-columns:1fr}.hdr{padding:0 1rem}.hdr-titles h1{font-size:.85rem}}
+</style>
 </head>
 <body>
 
-    <div id="login-screen">
-        <div class="login-box">
-            <h2>Tizimga kirish</h2>
-            <p>Dashboardni ko'rish uchun parolni kiriting:</p>
-            <input type="password" id="password-input" placeholder="Parol..."> <br>
-            <button onclick="checkPassword()">Kirish</button>
-            <p id="error-msg" style="color: red; display: none;">Parol noto'g'ri!</p>
-        </div>
+<!-- ══ PASSWORD ══════════════════════════════════════════ -->
+<div id="ps">
+  <svg class="ps-emblem" width="60" height="60" viewBox="0 0 52 52" fill="none">
+    <circle cx="26" cy="26" r="25" stroke="#c9a84c" stroke-width="1.4" fill="#061422"/>
+    <circle cx="26" cy="26" r="19.5" stroke="#c9a84c" stroke-width=".5" fill="none" stroke-dasharray="2 3"/>
+    <rect x="14" y="22" width="3" height="12" rx=".5" fill="#c9a84c" opacity=".85"/>
+    <rect x="19" y="19" width="3" height="15" rx=".5" fill="#c9a84c"/>
+    <rect x="24" y="16" width="3" height="18" rx=".5" fill="#c9a84c"/>
+    <rect x="29" y="19" width="3" height="15" rx=".5" fill="#c9a84c"/>
+    <rect x="34" y="22" width="3" height="12" rx=".5" fill="#c9a84c" opacity=".85"/>
+    <rect x="12" y="34" width="28" height="2" rx="1" fill="#c9a84c"/>
+    <polygon points="26,10 38.5,18 13.5,18" fill="none" stroke="#c9a84c" stroke-width="1.1"/>
+  </svg>
+  <div class="ps-title">
+    <h2>O'zbekiston Respublikasi Markaziy Banki</h2>
+    <p>Kredit dasturi monitoringi — maxfiy tizim</p>
+  </div>
+  <div class="ps-box">
+    <label>Kirish paroli</label>
+    <input id="pin" type="password" placeholder="••••••••" autocomplete="off"
+      onkeydown="if(event.key==='Enter')auth()">
+    <button class="ps-btn" onclick="auth()">Kirish &rarr;</button>
+    <div id="ps-err">Parol noto'g'ri. Qaytadan urinib ko'ring.</div>
+  </div>
+  <div class="ps-foot">faqat vakolatli xodimlar uchun</div>
+</div>
+
+<!-- ══ LOADER ═════════════════════════════════════════════ -->
+<div id="loader">
+  <div class="spin"></div>
+  <p>Ma'lumotlar yuklanmoqda…</p>
+</div>
+
+<!-- ══ HEADER ════════════════════════════════════════════ -->
+<header>
+  <div class="hdr">
+    <div class="hdr-l">
+      <svg width="50" height="50" viewBox="0 0 52 52" fill="none">
+        <circle cx="26" cy="26" r="25" stroke="#c9a84c" stroke-width="1.4" fill="#061422"/>
+        <circle cx="26" cy="26" r="19.5" stroke="#c9a84c" stroke-width=".5" fill="none" stroke-dasharray="2 3"/>
+        <rect x="14" y="22" width="3" height="12" rx=".5" fill="#c9a84c" opacity=".85"/>
+        <rect x="19" y="19" width="3" height="15" rx=".5" fill="#c9a84c"/>
+        <rect x="24" y="16" width="3" height="18" rx=".5" fill="#c9a84c"/>
+        <rect x="29" y="19" width="3" height="15" rx=".5" fill="#c9a84c"/>
+        <rect x="34" y="22" width="3" height="12" rx=".5" fill="#c9a84c" opacity=".85"/>
+        <rect x="12" y="34" width="28" height="2" rx="1" fill="#c9a84c"/>
+        <polygon points="26,10 38.5,18 13.5,18" fill="none" stroke="#c9a84c" stroke-width="1.1"/>
+      </svg>
+      <div class="hdr-titles">
+        <h1>O'zbekiston Respublikasi Markaziy Banki</h1>
+        <p>Kredit dasturi monitoringi — viloyatlar kesimida</p>
+      </div>
     </div>
-
-    <div id="dashboard">
-        <div class="header">
-            <h1>Bank Monitoring Dashboard - 2025</h1>
-            <p id="update-status">Ma'lumotlar yuklanmoqda...</p>
-        </div>
-
-        <div class="grid-container">
-            <div class="card">
-                <h2>Hududlar bo'yicha ajratilgan kreditlar</h2>
-                <canvas id="creditChart"></canvas>
-            </div>
-
-            <div class="card">
-                <h2>Muammoli kreditlar (NPL) qoldig'i</h2>
-                <canvas id="nplChart"></canvas>
-            </div>
-
-            <div class="card">
-                <h2>Yo'nalishlar bo'yicha taqsimot (Sektorlar)</h2>
-                <canvas id="sectorChart"></canvas>
-            </div>
-        </div>
+    <div class="hdr-r">
+      <div class="live-pill"><span class="live-dot"></span>Jonli ma'lumot</div>
+      <div class="upd"><strong id="updTime">—</strong>Oxirgi yangilanish</div>
     </div>
+  </div>
+</header>
 
-    <script>
-        // --- SOZLAMALAR ---
-        const CORRECT_PASSWORD = "hudud2025";
-        
-        // Google Sheets ID sini shu yerga qo'ying
-        // Fayl -> Publish to Web -> Link -> CSV ni tanlang
-        const SHEET_ID = '1UT8kIRpmQYdhbYC5mREZGqroPWlw4ICrWa_UCOjsvoA'; 
-        const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/pub?output=csv`;
+<!-- ══ MAIN ══════════════════════════════════════════════ -->
+<main>
+  <div id="notice"></div>
 
-        // Parolni tekshirish funksiyasi
-        function checkPassword() {
-            const input = document.getElementById('password-input').value;
-            if (input === CORRECT_PASSWORD) {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'block';
-                fetchData();
-            } else {
-                document.getElementById('error-msg').style.display = 'block';
-            }
-        }
+  <p class="sec">Asosiy ko'rsatkichlar</p>
+  <div class="kpi-row">
+    <div class="kpi">
+      <span class="kpi-ico">💳</span>
+      <div class="kpi-lbl">Jami ajratilgan kreditlar</div>
+      <div class="kpi-val" id="k1">—<span class="kpi-u">mlrd</span></div>
+      <div class="kpi-sub" id="k1s">— ta loyiha</div>
+    </div>
+    <div class="kpi t">
+      <span class="kpi-ico">🏗️</span>
+      <div class="kpi-lbl">Ishga tushirilgan loyihalar</div>
+      <div class="kpi-val" id="k2">—</div>
+      <div class="kpi-sub" id="k2s">— % amalga oshirildi</div>
+    </div>
+    <div class="kpi">
+      <span class="kpi-ico">📊</span>
+      <div class="kpi-lbl">Kredit qoldig'i (balans)</div>
+      <div class="kpi-val" id="k3">—<span class="kpi-u">mlrd</span></div>
+      <div class="kpi-sub" id="k3s">— ta loyiha</div>
+    </div>
+    <div class="kpi r">
+      <span class="kpi-ico">⚠️</span>
+      <div class="kpi-lbl">Muammoli kreditlar (NPL)</div>
+      <div class="kpi-val" id="k4">—<span class="kpi-u">mlrd</span></div>
+      <div class="kpi-sub" id="k4s">— ta loyiha</div>
+    </div>
+    <div class="kpi">
+      <span class="kpi-ico">🔭</span>
+      <div class="kpi-lbl">Kelajakda rejalashtirilgan</div>
+      <div class="kpi-val" id="k5">—<span class="kpi-u">mlrd</span></div>
+      <div class="kpi-sub" id="k5s">— ta loyiha</div>
+    </div>
+  </div>
 
-        async function fetchData() {
-            try {
-                const response = await fetch(csvUrl);
-                const data = await response.text();
-                const rows = data.split('\n').slice(1); // Headerlarni olib tashlash
+  <p class="sec">Tahliliy diagrammalar</p>
+  <div class="charts-row">
+    <div class="card">
+      <div class="card-ttl">Viloyatlar bo'yicha jami kreditlar (mln so'm)</div>
+      <canvas id="barC"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-ttl">Tarmoqlar bo'yicha taqsimot</div>
+      <div style="display:flex;justify-content:center"><canvas id="donutC" style="max-width:170px;max-height:170px"></canvas></div>
+      <div class="leg" id="legEl"></div>
+    </div>
+    <div class="card">
+      <div class="card-ttl">NPL nisbati va muammo ko'rsatkichlari</div>
+      <div class="npl-big">
+        <div class="npl-num" id="nplPct">—<sup>%</sup></div>
+        <div class="npl-cap">NPL / Kredit qoldig'i</div>
+      </div>
+      <div class="npl-track"><div class="npl-fill" id="nplFill" style="width:0%"></div></div>
+      <div class="npl-thr"><span>Yaxshi &lt;3%</span><span>O'rtacha 3–5%</span><span>Xavfli &gt;5%</span></div>
+      <div class="mini-grid">
+        <div class="mini-box"><div class="mini-lbl">Tushirilmagan</div><div class="mini-val" id="mNotL">—</div></div>
+        <div class="mini-box"><div class="mini-lbl">To'xtatilgan</div><div class="mini-val" id="mStop">—</div></div>
+        <div class="mini-box"><div class="mini-lbl">Muddati o'tgan</div><div class="mini-val" id="mOver">—</div></div>
+        <div class="mini-box"><div class="mini-lbl">Kelajak loyiha</div><div class="mini-val" id="mFut">—</div></div>
+      </div>
+    </div>
+  </div>
 
-                const labels = [];
-                const creditSum = [];
-                const nplSum = [];
-                
-                // Sektorlar uchun umumiy yig'indilar
-                let sanotSum = 0, qishloqSum = 0, xizmatSum = 0;
+  <p class="sec">Viloyatlar kesimida batafsil ko'rsatkichlar</p>
+  <div class="tbl-card">
+    <div class="tbl-hdr"><div class="tbl-hdr-ttl">Barcha hududlar — to'liq ma'lumot</div></div>
+    <div class="tbl-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:left">Hudud</th>
+            <th>Kreditlar<br>soni</th>
+            <th>Jami kredit<br>summasi</th>
+            <th>Sanoat</th>
+            <th>Q.xo'jaligi</th>
+            <th>Xizmat</th>
+            <th>Ishga<br>tushirilgan</th>
+            <th>Tushirilmagan</th>
+            <th>Kredit<br>qoldig'i</th>
+            <th>O'tgan yilga<br>nisbatan</th>
+            <th>NPL soni</th>
+            <th>NPL summasi</th>
+          </tr>
+        </thead>
+        <tbody id="tBody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
 
-                rows.forEach(row => {
-                    const cols = row.split(',');
-                    if (cols[0]) {
-                        labels.push(cols[0]); // Hudud nomi
-                        creditSum.push(parseFloat(cols[2]) || 0); // Ajratilgan kredit summasi
-                        nplSum.push(parseFloat(cols[18]) || 0); // NPL summasi
-                        
-                        sanotSum += parseFloat(cols[3]) || 0;
-                        qishloqSum += parseFloat(cols[4]) || 0;
-                        xizmatSum += parseFloat(cols[5]) || 0;
-                    }
-                });
+<footer>
+  <div>O'zbekiston Respublikasi Markaziy Banki &nbsp;|&nbsp; <span>Kredit monitoring tizimi</span></div>
+  <div>Manba: Google Sheets &nbsp;•&nbsp; Har 5 daqiqada yangilanadi</div>
+</footer>
 
-                document.getElementById('update-status').innerText = "Oxirgi yangilanish: " + new Date().toLocaleString();
-                
-                renderCharts(labels, creditSum, nplSum, [sanotSum, qishloqSum, xizmatSum]);
-            } catch (error) {
-                document.getElementById('update-status').innerText = "Xatolik: Ma'lumotlarni yuklab bo'lmadi.";
-                console.error(error);
-            }
-        }
+<script>
+/* ═══════════════════════════════════════════════════════
+   ⚙️  SOZLASH — Google Sheets ID ni shu yerga kiriting
+   ─────────────────────────────────────────────────────
+   Google Sheets URL ko'rinishi:
+   https://docs.google.com/spreadsheets/d/ [ ID ] /edit
+                                             ↑
+                                    SHU QISMNI OLING
 
-        function renderCharts(labels, credits, npl, sectors) {
-            // Kreditlar grafigi
-            new Chart(document.getElementById('creditChart'), {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Kredit summasi (mln so\'m)',
-                        data: credits,
-                        backgroundColor: '#3498db'
-                    }]
-                },
-                options: { responsive: true }
-            });
+   Muhim: Sheets "Publish to web" qilingan bo'lishi SHART
+   File → Share → Publish to web → CSV → Publish
+   ═══════════════════════════════════════════════════════ */
+const SHEET_ID = '1UT8kIRpmQYdhbYC5mREZGqroPWlw4ICrWa_UCOjsvoA';
 
-            // NPL grafigi
-            new Chart(document.getElementById('nplChart'), {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'NPL summasi',
-                        data: npl,
-                        backgroundColor: '#e74c3c'
-                    }]
-                }
-            });
+/* ════════════════════════════════════════════════════════ */
 
-            // Sektorlar Pie grafigi
-            new Chart(document.getElementById('sectorChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Sanoat', 'Qishloq xo\'jaligi', 'Xizmat ko\'rsatish'],
-                    datasets: [{
-                        data: sectors,
-                        backgroundColor: ['#1abc9c', '#f1c40f', '#9b59b6']
-                    }]
-                }
-            });
-        }
-    </script>
+const PASSWORD   = 'hudud2026';
+const AUTH_KEY   = 'mb_auth_v1';
+const REFRESH_MS = 5 * 60 * 1000;
+
+// ── Parol ──────────────────────────────────────────────
+function auth() {
+  if (document.getElementById('pin').value === PASSWORD) {
+    sessionStorage.setItem(AUTH_KEY, '1');
+    document.getElementById('ps').classList.add('gone');
+    init();
+  } else {
+    const p = document.getElementById('pin');
+    p.classList.add('err');
+    document.getElementById('ps-err').style.display = 'block';
+    p.value = '';
+    setTimeout(() => { p.classList.remove('err'); document.getElementById('ps-err').style.display='none'; }, 2200);
+  }
+}
+document.getElementById('pin').addEventListener('keydown', e => { if(e.key==='Enter') auth(); });
+
+if (sessionStorage.getItem(AUTH_KEY) === '1') {
+  document.getElementById('ps').classList.add('gone');
+  init();
+}
+
+// ── Ma'lumot yuklash ───────────────────────────────────
+function init() {
+  loadData();
+  setInterval(loadData, REFRESH_MS);
+}
+
+async function loadData() {
+  if (SHEET_ID === 'BU_YERGA_ID_KIRITING') {
+    notice('⚙️ <strong>Sozlash kerak:</strong> HTML fayldagi <code>SHEET_ID</code> o\'zgaruvchisiga Google Sheets ID ni kiriting. Keyin Google Sheets → <em>File → Share → Publish to web → CSV → Publish</em> qiling.');
+    hide('loader');
+    render(DEMO);
+    return;
+  }
+
+  // Ikkita URL sinab ko'ramiz
+  const urls = [
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`,
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/pub?output=csv&gid=0`,
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`,
+  ];
+
+  let data = null;
+  for (const url of urls) {
+    try {
+      const r = await fetch(url, { cache: 'no-store' });
+      if (!r.ok) continue;
+      const txt = await r.text();
+      if (!txt || txt.length < 20) continue;
+      data = parseCSV(txt);
+      if (data && data.length > 0) break;
+    } catch(_) { continue; }
+  }
+
+  hide('loader');
+
+  if (!data || data.length === 0) {
+    notice('⚠️ <strong>Ma\'lumot yuklanmadi.</strong> Quyidagilarni tekshiring: 1) Google Sheets ID to\'g\'riligi 2) Sheets "Publish to web" qilinganmi 3) Sheets ommaviy ulashilganmi (<em>Anyone with link can view</em>)');
+    render(DEMO);
+    return;
+  }
+
+  document.getElementById('notice').style.display = 'none';
+  render(data);
+  document.getElementById('updTime').textContent = new Date().toLocaleTimeString('uz-UZ',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ── CSV parser ─────────────────────────────────────────
+function parseCSV(txt) {
+  const lines = txt.trim().split('\n');
+  if (lines.length < 2) return [];
+  const headers = splitCSVLine(lines[0]);
+  return lines.slice(1).map(line => {
+    const vals = splitCSVLine(line);
+    const obj = {};
+    headers.forEach((h, i) => { obj[h.trim().replace(/^"|"$/g,'')] = (vals[i]||'').trim().replace(/^"|"$/g,''); });
+    return obj;
+  }).filter(r => Object.values(r).some(v => v !== ''));
+}
+
+function splitCSVLine(line) {
+  const result = []; let cur = ''; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
+    else cur += c;
+  }
+  result.push(cur);
+  return result;
+}
+
+// ── Helpers ────────────────────────────────────────────
+const n    = v => isNaN(+v) ? 0 : +v;
+const fmt  = v => isNaN(+v)||+v===0 ? '—' : (+v).toLocaleString('uz-UZ',{maximumFractionDigits:1});
+const mlrd = v => (n(v)/1000).toFixed(1);
+const sum  = (arr,k) => arr.reduce((a,r) => a+n(r[k]),0);
+function hide(id){ document.getElementById(id).classList.add('gone'); }
+function notice(html){ const el=document.getElementById('notice'); el.innerHTML=html; el.style.display='block'; }
+
+// ── Render ─────────────────────────────────────────────
+let barCh=null, donutCh=null;
+const COLORS = ['#4a8fd9','#22b5a0','#c9a84c','#9b6bc7','#e07b32','#1bcc9e','#e06060','#3da0db','#f0a828','#30bd78','#8a4abd','#d66020','#2896c8','#18a89a'];
+
+function render(data) {
+  renderKPIs(data);
+  renderBar(data);
+  renderDonut(data);
+  renderNPL(data);
+  renderTable(data);
+}
+
+function renderKPIs(d) {
+  const tot  = sum(d,'Kredit_summasi');
+  const cnt  = sum(d,'Kreditlar_soni');
+  const lnch = sum(d,'Ishga_tushirilgan_soni');
+  const bal  = sum(d,'Kredit_qoldighi_summasi');
+  const balC = sum(d,'Qoldiq_loyiha_soni');
+  const npl  = sum(d,'NPL_summasi');
+  const nplC = sum(d,'NPL_loyiha_soni');
+  const fut  = sum(d,'Kelajak_kredit_summasi');
+  const futC = sum(d,'Kelajak_loyiha_soni');
+  const pct  = cnt ? ((lnch/cnt)*100).toFixed(1) : '—';
+
+  document.getElementById('k1').innerHTML = `${mlrd(tot)}<span class="kpi-u">mlrd</span>`;
+  document.getElementById('k1s').textContent = `${fmt(cnt)} ta loyiha`;
+  document.getElementById('k2').textContent  = fmt(lnch);
+  document.getElementById('k2s').innerHTML   = `<span class="up">${pct}%</span> amalga oshirildi`;
+  document.getElementById('k3').innerHTML = `${mlrd(bal)}<span class="kpi-u">mlrd</span>`;
+  document.getElementById('k3s').textContent = `${fmt(balC)} ta loyiha`;
+  document.getElementById('k4').innerHTML = `${mlrd(npl)}<span class="kpi-u">mlrd</span>`;
+  document.getElementById('k4s').textContent = `${fmt(nplC)} ta loyiha`;
+  document.getElementById('k5').innerHTML = `${mlrd(fut)}<span class="kpi-u">mlrd</span>`;
+  document.getElementById('k5s').textContent = `${fmt(futC)} ta loyiha`;
+}
+
+function renderBar(d) {
+  const labels = d.map(r => r['Hudud']||Object.values(r)[0]);
+  const vals   = d.map(r => n(r['Kredit_summasi']));
+  if (barCh) barCh.destroy();
+  barCh = new Chart(document.getElementById('barC'), {
+    type:'bar',
+    data:{ labels, datasets:[{ data:vals, backgroundColor:COLORS, borderWidth:0, borderRadius:4 }] },
+    options:{
+      responsive:true,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>` ${fmt(c.parsed.y)} mln`}} },
+      scales:{
+        x:{ ticks:{color:'rgba(238,242,247,.4)',font:{size:9,family:'Barlow Condensed'},maxRotation:38}, grid:{color:'rgba(201,168,76,.05)'} },
+        y:{ ticks:{color:'rgba(238,242,247,.4)',font:{size:9,family:'Barlow Condensed'},callback:v=>(v/1000).toFixed(0)+'K'}, grid:{color:'rgba(201,168,76,.06)'} }
+      }
+    }
+  });
+}
+
+function renderDonut(d) {
+  const sanoat = sum(d,'Sanoat_summasi');
+  const agri   = sum(d,'Qishloq_xojaligi_summasi');
+  const xizmat = sum(d,'Xizmat_summasi');
+  const total  = sanoat+agri+xizmat;
+  const labels = ['Sanoat','Qishloq xo\'jaligi','Xizmat ko\'rsatish'];
+  const vals   = [sanoat, agri, xizmat];
+  const cols   = ['#4a8fd9','#22b5a0','#c9a84c'];
+
+  if (donutCh) donutCh.destroy();
+  donutCh = new Chart(document.getElementById('donutC'), {
+    type:'doughnut',
+    data:{ labels, datasets:[{ data:vals, backgroundColor:cols, borderWidth:0, hoverOffset:5 }] },
+    options:{ cutout:'66%', responsive:true, plugins:{ legend:{display:false},
+      tooltip:{callbacks:{label:c=>` ${((c.parsed/total)*100).toFixed(1)}% — ${fmt(c.parsed)} mln`}} } }
+  });
+
+  document.getElementById('legEl').innerHTML = labels.map((l,i)=>`
+    <div class="leg-row">
+      <div class="leg-dot" style="background:${cols[i]}"></div>
+      <span class="leg-name">${l}</span>
+      <span class="leg-val">${mlrd(vals[i])} mlrd</span>
+    </div>`).join('');
+}
+
+function renderNPL(d) {
+  const npl = sum(d,'NPL_summasi');
+  const bal = sum(d,'Kredit_qoldighi_summasi');
+  const rat = bal ? (npl/bal)*100 : 0;
+  document.getElementById('nplPct').innerHTML = `${rat.toFixed(2)}<sup>%</sup>`;
+  document.getElementById('nplFill').style.width = Math.min(rat*10,100)+'%';
+  document.getElementById('mNotL').textContent = fmt(sum(d,'Tushirilmagan_soni'))+' ta';
+  document.getElementById('mStop').textContent = fmt(sum(d,'Toxtatiilgan_soni'))+' ta';
+  document.getElementById('mOver').textContent = fmt(sum(d,'Muddati_otgan_soni'))+' ta';
+  document.getElementById('mFut').textContent  = fmt(sum(d,'Kelajak_loyiha_soni'))+' ta';
+}
+
+function renderTable(d) {
+  const sorted = [...d].sort((a,b)=>n(b['Kredit_summasi'])-n(a['Kredit_summasi']));
+  document.getElementById('tBody').innerHTML = sorted.map((r,i)=>{
+    const ch = n(r['Otgan_yilga_nisbatan']);
+    const pct = (ch*100).toFixed(1);
+    const badge = ch>=1 ? `<span class="badge g">↑ ${pct}%</span>`
+                : ch>=0.8 ? `<span class="badge y">↗ ${pct}%</span>`
+                : `<span class="badge r">↓ ${pct}%</span>`;
+    return `<tr>
+      <td><span class="rk">${i+1}.</span>${r['Hudud']||Object.values(r)[0]}</td>
+      <td>${fmt(r['Kreditlar_soni'])}</td>
+      <td>${fmt(r['Kredit_summasi'])}</td>
+      <td>${fmt(r['Sanoat_summasi'])}</td>
+      <td>${fmt(r['Qishloq_xojaligi_summasi'])}</td>
+      <td>${fmt(r['Xizmat_summasi'])}</td>
+      <td>${fmt(r['Ishga_tushirilgan_soni'])}</td>
+      <td>${fmt(r['Tushirilmagan_soni'])}</td>
+      <td>${fmt(r['Kredit_qoldighi_summasi'])}</td>
+      <td>${badge}</td>
+      <td>${fmt(r['NPL_loyiha_soni'])}</td>
+      <td>${fmt(r['NPL_summasi'])}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Demo data ──────────────────────────────────────────
+const DEMO = [
+  {Hudud:"Qoraqalpog'iston R.",Kreditlar_soni:3150,Kredit_summasi:8534.97,Sanoat_summasi:5682.2,Qishloq_xojaligi_summasi:763.71,Xizmat_summasi:2089.06,Ishga_tushirilgan_soni:3052,Tushirilmagan_soni:98,Tushirilmagan_summasi:295.88,Muddati_otgan_soni:9,Toxtatiilgan_soni:161,Kelajak_loyiha_soni:132,Kelajak_kredit_summasi:2478.8,Qoldiq_loyiha_soni:995,Kredit_qoldighi_summasi:2450.81,Otgan_yilga_nisbatan:0.939,NPL_loyiha_soni:85,NPL_summasi:390.5},
+  {Hudud:"Andijon viloyati",Kreditlar_soni:1638,Kredit_summasi:8437.37,Sanoat_summasi:5870.87,Qishloq_xojaligi_summasi:1266.44,Xizmat_summasi:1300.05,Ishga_tushirilgan_soni:1590,Tushirilmagan_soni:48,Tushirilmagan_summasi:431.45,Muddati_otgan_soni:1,Toxtatiilgan_soni:9,Kelajak_loyiha_soni:45,Kelajak_kredit_summasi:995.97,Qoldiq_loyiha_soni:510,Kredit_qoldighi_summasi:2727.05,Otgan_yilga_nisbatan:1.02,NPL_loyiha_soni:102,NPL_summasi:255.26},
+  {Hudud:"Buxoro viloyati",Kreditlar_soni:2545,Kredit_summasi:9883.81,Sanoat_summasi:5260.99,Qishloq_xojaligi_summasi:2241.93,Xizmat_summasi:2380.89,Ishga_tushirilgan_soni:2484,Tushirilmagan_soni:61,Tushirilmagan_summasi:148.01,Muddati_otgan_soni:6,Toxtatiilgan_soni:49,Kelajak_loyiha_soni:104,Kelajak_kredit_summasi:1649.96,Qoldiq_loyiha_soni:1047,Kredit_qoldighi_summasi:3179.57,Otgan_yilga_nisbatan:0.772,NPL_loyiha_soni:91,NPL_summasi:183.81},
+  {Hudud:"Jizzax viloyati",Kreditlar_soni:1668,Kredit_summasi:9118.55,Sanoat_summasi:6474.82,Qishloq_xojaligi_summasi:1423.06,Xizmat_summasi:1220.67,Ishga_tushirilgan_soni:1555,Tushirilmagan_soni:113,Tushirilmagan_summasi:1558.54,Muddati_otgan_soni:3,Toxtatiilgan_soni:35,Kelajak_loyiha_soni:64,Kelajak_kredit_summasi:537.17,Qoldiq_loyiha_soni:758,Kredit_qoldighi_summasi:4178.18,Otgan_yilga_nisbatan:0.686,NPL_loyiha_soni:87,NPL_summasi:163.33},
+  {Hudud:"Qashqadaryo viloyati",Kreditlar_soni:3949,Kredit_summasi:8907.61,Sanoat_summasi:5238.36,Qishloq_xojaligi_summasi:1819.39,Xizmat_summasi:1849.86,Ishga_tushirilgan_soni:3859,Tushirilmagan_soni:90,Tushirilmagan_summasi:865.45,Muddati_otgan_soni:2,Toxtatiilgan_soni:40,Kelajak_loyiha_soni:108,Kelajak_kredit_summasi:1477.41,Qoldiq_loyiha_soni:1147,Kredit_qoldighi_summasi:3135.8,Otgan_yilga_nisbatan:0.823,NPL_loyiha_soni:97,NPL_summasi:104.45},
+  {Hudud:"Navoiy viloyati",Kreditlar_soni:2567,Kredit_summasi:16570.13,Sanoat_summasi:13347.19,Qishloq_xojaligi_summasi:969.58,Xizmat_summasi:2253.36,Ishga_tushirilgan_soni:2430,Tushirilmagan_soni:137,Tushirilmagan_summasi:1998.81,Muddati_otgan_soni:5,Toxtatiilgan_soni:0,Kelajak_loyiha_soni:109,Kelajak_kredit_summasi:1609.93,Qoldiq_loyiha_soni:954,Kredit_qoldighi_summasi:6751.09,Otgan_yilga_nisbatan:0.73,NPL_loyiha_soni:46,NPL_summasi:55.23},
+  {Hudud:"Namangan viloyati",Kreditlar_soni:2839,Kredit_summasi:6877.78,Sanoat_summasi:3907.59,Qishloq_xojaligi_summasi:1233.26,Xizmat_summasi:1736.94,Ishga_tushirilgan_soni:2732,Tushirilmagan_soni:107,Tushirilmagan_summasi:156.45,Muddati_otgan_soni:2,Toxtatiilgan_soni:1,Kelajak_loyiha_soni:88,Kelajak_kredit_summasi:767.19,Qoldiq_loyiha_soni:723,Kredit_qoldighi_summasi:1713.28,Otgan_yilga_nisbatan:0.693,NPL_loyiha_soni:99,NPL_summasi:151.24},
+  {Hudud:"Samarqand viloyati",Kreditlar_soni:2863,Kredit_summasi:12374.46,Sanoat_summasi:7298.65,Qishloq_xojaligi_summasi:2152.98,Xizmat_summasi:2922.83,Ishga_tushirilgan_soni:2768,Tushirilmagan_soni:95,Tushirilmagan_summasi:296.21,Muddati_otgan_soni:1,Toxtatiilgan_soni:14,Kelajak_loyiha_soni:130,Kelajak_kredit_summasi:2677.42,Qoldiq_loyiha_soni:1085,Kredit_qoldighi_summasi:3754.75,Otgan_yilga_nisbatan:0.932,NPL_loyiha_soni:81,NPL_summasi:186.29},
+  {Hudud:"Surxondaryo viloyati",Kreditlar_soni:3617,Kredit_summasi:10837.39,Sanoat_summasi:5769.37,Qishloq_xojaligi_summasi:1512.76,Xizmat_summasi:3555.26,Ishga_tushirilgan_soni:3538,Tushirilmagan_soni:79,Tushirilmagan_summasi:369.69,Muddati_otgan_soni:0,Toxtatiilgan_soni:27,Kelajak_loyiha_soni:73,Kelajak_kredit_summasi:1059.46,Qoldiq_loyiha_soni:1089,Kredit_qoldighi_summasi:2336.59,Otgan_yilga_nisbatan:0.795,NPL_loyiha_soni:177,NPL_summasi:582.08},
+  {Hudud:"Sirdaryo viloyati",Kreditlar_soni:1378,Kredit_summasi:4649.27,Sanoat_summasi:2109.81,Qishloq_xojaligi_summasi:1305.7,Xizmat_summasi:1233.76,Ishga_tushirilgan_soni:1300,Tushirilmagan_soni:78,Tushirilmagan_summasi:318.98,Muddati_otgan_soni:0,Toxtatiilgan_soni:0,Kelajak_loyiha_soni:26,Kelajak_kredit_summasi:212.32,Qoldiq_loyiha_soni:533,Kredit_qoldighi_summasi:1751.11,Otgan_yilga_nisbatan:0.802,NPL_loyiha_soni:47,NPL_summasi:117.26},
+  {Hudud:"Toshkent viloyati",Kreditlar_soni:1393,Kredit_summasi:11665.12,Sanoat_summasi:8358.01,Qishloq_xojaligi_summasi:2123.87,Xizmat_summasi:1183.24,Ishga_tushirilgan_soni:1367,Tushirilmagan_soni:26,Tushirilmagan_summasi:551.04,Muddati_otgan_soni:2,Toxtatiilgan_soni:65,Kelajak_loyiha_soni:40,Kelajak_kredit_summasi:3138.33,Qoldiq_loyiha_soni:399,Kredit_qoldighi_summasi:3441.4,Otgan_yilga_nisbatan:0.814,NPL_loyiha_soni:44,NPL_summasi:118.56},
+  {Hudud:"Farg'ona viloyati",Kreditlar_soni:2799,Kredit_summasi:10824.57,Sanoat_summasi:7855.83,Qishloq_xojaligi_summasi:1406.08,Xizmat_summasi:1562.67,Ishga_tushirilgan_soni:2725,Tushirilmagan_soni:74,Tushirilmagan_summasi:2917.41,Muddati_otgan_soni:2,Toxtatiilgan_soni:20,Kelajak_loyiha_soni:53,Kelajak_kredit_summasi:1206.47,Qoldiq_loyiha_soni:891,Kredit_qoldighi_summasi:2409.91,Otgan_yilga_nisbatan:0.823,NPL_loyiha_soni:110,NPL_summasi:249.06},
+  {Hudud:"Xorazm viloyati",Kreditlar_soni:2932,Kredit_summasi:8253.41,Sanoat_summasi:4242.07,Qishloq_xojaligi_summasi:2490.1,Xizmat_summasi:1520.35,Ishga_tushirilgan_soni:2819,Tushirilmagan_soni:113,Tushirilmagan_summasi:512.23,Muddati_otgan_soni:12,Toxtatiilgan_soni:69,Kelajak_loyiha_soni:88,Kelajak_kredit_summasi:1514.96,Qoldiq_loyiha_soni:880,Kredit_qoldighi_summasi:3518.71,Otgan_yilga_nisbatan:0.862,NPL_loyiha_soni:62,NPL_summasi:147.48},
+  {Hudud:"Toshkent shahri",Kreditlar_soni:385,Kredit_summasi:7329.28,Sanoat_summasi:5293.04,Qishloq_xojaligi_summasi:0,Xizmat_summasi:2036.24,Ishga_tushirilgan_soni:385,Tushirilmagan_soni:0,Tushirilmagan_summasi:0,Muddati_otgan_soni:0,Toxtatiilgan_soni:0,Kelajak_loyiha_soni:0,Kelajak_kredit_summasi:0,Qoldiq_loyiha_soni:49,Kredit_qoldighi_summasi:818.17,Otgan_yilga_nisbatan:0.654,NPL_loyiha_soni:6,NPL_summasi:18.56},
+];
+</script>
 </body>
 </html>
